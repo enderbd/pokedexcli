@@ -1,15 +1,22 @@
 package main
 
 import (
-	"fmt"
 	"bufio"
+	"fmt"
 	"os"
 	"strings"
+
+	"github.com/enderbd/pokedexcli/internal/pokeapi"
 )
 
+type config struct {
+	pokeApiClient pokeapi.Client
+	prevLocationsURL *string
+	nextLocationsURL *string
+}
 
 
-func startRepl() {
+func startRepl(cfg *config) {
 	scanner := bufio.NewScanner(os.Stdin)
 	prompt := "Pokedex > "
 	var userInput []string
@@ -29,7 +36,7 @@ func startRepl() {
 		commandName := userInput[0]
 		command, exists := commands()[commandName]
 		if exists {
-			err := command.callback()
+			err := command.callback(cfg)
 			if err != nil {
 				fmt.Println(err)
 			}
