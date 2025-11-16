@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"math/rand"
 )
 
 type cliCommand struct {
@@ -87,6 +88,59 @@ func commandExplore(c *config, args []string) error {
 	return nil
 }
 
+func commandCatch(c* config, args []string) error {
+	if len(args) < 1 {
+		return errors.New("Need a pokemong name to catch!")
+	}
+	pokemonName := args[0]
+
+	pokemonInfo, err := c.pokeApiClient.GetPokemonInfo(pokemonName)
+	if err != nil {
+		return err
+	}
+	pokemoneBaseExp := pokemonInfo.BaseExperience
+	rngCatch := rand.Intn(pokemoneBaseExp)
+
+
+	fmt.Printf("Throwing a Pokeball at %s...\n", pokemonInfo.Name)
+	if rngCatch > 40 {
+		fmt.Printf("%s escaped!\n", pokemonInfo.Name)
+		return nil
+	}
+
+	fmt.Printf("%s was caught!\n", pokemonInfo.Name)
+	c.caughtPokemon[pokemonInfo.Name] = pokemonInfo
+
+	return nil
+}
+
+func commandInspect(c* config, args []string) error {
+	if len(args) < 1 {
+		return errors.New("Need a pokemon name!")
+	}
+	pokemonName := args[0]
+
+	pokemonInfo, ok := c.caughtPokemon[pokemonName]
+	if !ok {
+		return errors.New("Need to catch it first before we can see the stats")
+	}
+
+	fmt.Printf("Name: %s\n", pokemonInfo.Name)
+	fmt.Printf("Height: %v\n", pokemonInfo.Height)
+	fmt.Printf("Weight: %v\n", pokemonInfo.Weight)
+	fmt.Println("Stats:")
+	for _, s := range pokemonInfo.Stats {
+		fmt.Printf("  -%s:%v\n", s.Stat.Name, s.BaseStat)
+	}
+	fmt.Println("Types:")
+	for _, t := range pokemonInfo.Types {
+		fmt.Printf("  -%s\n", t.Type.Name)
+	}
+
+	return nil
+}
+
+
 func commands() map[string]cliCommand {
 	return map[string]cliCommand{
 		"help": {
@@ -110,9 +164,20 @@ func commands() map[string]cliCommand {
 			callback:    commandMapBack,
 		},
 		"explore" : {
-			name: "explore",
+			name: "explore <area_name>",
 			description: "Explores the provided area",
 			callback: commandExplore,
 		},
-	}
+		"catch" : {
+			name: "catch <pokemon_name>",
+			description: "Attempt to catches the pokemon !",
+			callback: commandCatch,
+		},
+		"inspect" : {
+			name: "inspect <pokemon_name>",
+			description: "If the <pokemon-name> was caught, display it's stats !",
+			callback: commandInspect,
+		},
+
+}
 }

@@ -11,6 +11,7 @@ import (
 // Base URL for the Poke API
 const baseURL =  "https://pokeapi.co/api/v2"
 
+// Struct to grab the JSONs responses
 type PokeResponse struct {
 	Count    int     `json:"coun"`
 	Next     *string `json:"next"`
@@ -30,7 +31,23 @@ type PokeAreaInfo struct {
 		} `json:"pokemon"`
 	} `json:"pokemon_encounters"`
 }
-
+type PokemonInfo struct {
+	Name string `json:"name"`
+	BaseExperience int `json:"base_experience"`
+	Height int `json:"height"`
+	Weight int `json:"weight"`
+	Stats []struct {
+		BaseStat int `json:"base_stat"`
+		Stat struct{
+			Name string `json:"name"`
+		} `json:"stat"`
+	} `json:"stats"`
+	Types []struct {
+		Type struct {
+			Name string `json:"name"`
+		}`json:"type"`
+	}`json:"types"`
+}
 // Client struct
 type Client struct {
 	cache pokecache.Cache
@@ -115,19 +132,60 @@ func (c* Client) GetPokemonEncounters(area string) (PokeAreaInfo, error) {
 	}
 	defer resp.Body.Close()
 
-	dat, err := io.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return PokeAreaInfo{}, err
 	}
 
 	pokeAreaInfo := PokeAreaInfo{}
-	err = json.Unmarshal(dat, &pokeAreaInfo)
+	err = json.Unmarshal(data, &pokeAreaInfo)
 	if err != nil {
 		return PokeAreaInfo{}, err
 	}
 
-	c.cache.Add(url, dat)
+	c.cache.Add(url, data)
 
 	
 	return pokeAreaInfo, nil
+}
+
+func(c* Client) GetPokemonInfo(name string) (PokemonInfo, error) {
+	url := baseURL + "/pokemon/" + name
+
+	if val, ok := c.cache.Get(url); ok {
+		pokemonInfo := PokemonInfo{}
+		err := json.Unmarshal(val, &pokemonInfo)
+		if err != nil {
+			return PokemonInfo{}, err
+		}
+		return pokemonInfo, nil
+	}
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return PokemonInfo{}, err
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return PokemonInfo{}, err
+	}
+	defer resp.Body.Close()
+
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return PokemonInfo{}, err
+	}
+
+	pokemonInfo := PokemonInfo{}
+	err = json.Unmarshal(data, &pokemonInfo)
+	if err != nil {
+		return PokemonInfo{}, err
+	}
+
+	c.cache.Add(url, data)
+
+	
+	return pokemonInfo, nil
+
 }
