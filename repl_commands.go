@@ -140,7 +140,18 @@ func commandInspect(c* config, args []string) error {
 	return nil
 }
 
-
+func commandList(c* config, args []string) error {
+	if len(c.caughtPokemon) < 1 {
+		return errors.New("Nothing to list, no Pokemon caught!")
+	}
+	
+	fmt.Println("Your Pokedex:")
+	for _, pokemonm := range c.caughtPokemon {
+		fmt.Printf("  - %s\n", pokemonm.Name)
+	}
+	
+	return nil
+}
 func commands() map[string]cliCommand {
 	return map[string]cliCommand{
 		"help": {
@@ -178,6 +189,12 @@ func commands() map[string]cliCommand {
 			description: "If the <pokemon-name> was caught, display it's stats !",
 			callback: commandInspect,
 		},
+		"pokedex" : {
+			name: "pokedex",
+			description: "Displays the caught pokemons!",
+			callback: commandList,
+		},
+
 
 }
 }
